@@ -30,8 +30,6 @@ This terraform module will deploy the following services:
 | user_data_base64           | string    | Additional user data in base64 format to execute when instance boots up                              |            | N        |
 | subnet_ids           | list    | List of subnet ids to be used for launching EKS nodes                                                    |            | Y        |
 
----
-
 ## Outputs
 | Parameter           | Type   | Description               |
 |---------------------|--------|---------------------------|
@@ -41,15 +39,11 @@ This terraform module will deploy the following services:
 | sg_ids           | list | IDs of security group attached to EKS node            |
 | asg_id           | string | ID of autoscaling group            |
 
----
-
 ## Deployment
 - `terraform init` - download plugins required to deploy resources
 - `terraform plan` - get detailed view of resources that will be created, deleted or replaced
 - `terraform apply -auto-approve` - deploy the template without confirmation (non-interactive mode)
 - `terraform destroy -auto-approve` - terminate all the resources created using this template without confirmation (non-interactive mode)
-
----
 
 ## [IMPORTANT] Post Steps (Source: [AWS](https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html#self-managed-nodes))
 Once the self managed nodes are created you need to execute the following steps so that your nodes can join EKS cluster.
@@ -85,8 +79,6 @@ kubectl apply -f aws-auth-cm.yaml
 ```
 kubectl get nodes --watch
 ```
-
----
 
 ## Cluster Autoscaler Setup (Source: [AWS](https://docs.aws.amazon.com/eks/latest/userguide/cluster-autoscaler.html#ca-deploy))
 To enable Cluster Autoscaler execute the following steps:
