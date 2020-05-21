@@ -1,8 +1,9 @@
-# Launch an EKS Managed Node Group
+# Launch an EKS Self-Managed Node Group
 
 This terraform module will deploy the following services:
 - IAM Instance Profile
 - IAM Role
+- IAM Role Policy
 - Security Group
 - Launch Template
 - Auto Scaling Group
