@@ -13,7 +13,7 @@ This terraform module will deploy the following services:
 | Parameter            | Type    | Description                                                                                              | Default    | Required |
 |----------------------|---------|----------------------------------------------------------------------------------------------------------|------------|----------|
 | cluster_name     | string  | Name of EKS cluster   |            | Y        |
-| ng_name     | string  | Name used for launch template and autoscaling group created for EKS nodes   |            | Y        |
+| ng_name     | string  | Name used for launch template and autoscaling group created for EKS nodes   |            | N        |
 | desired_size         | number  | Initial number of nodes to launch               | 2          | N        |
 | max_size             | number  | Maximum number of nodes                                                                                  | 4          | N        |
 | min_size             | number  | Minimum number of nodes to maintain at any given point of time                                           | 2          | N        |
