@@ -2,6 +2,10 @@ output "profile" {
   value = aws_iam_instance_profile.eks_ng_vm_profile.name
 }
 
+output "role_name" {
+  value = aws_iam_role.eks_ng_role.name
+}
+
 output "role_arn" {
   value = aws_iam_role.eks_ng_role.arn
 }

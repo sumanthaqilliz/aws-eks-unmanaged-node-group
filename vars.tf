@@ -1,5 +1,9 @@
 variable "cluster_name" {}
 
+variable "ng_name" {
+  default = ""
+}
+
 variable "desired_size" {
   default = 2
 }

@@ -13,6 +13,7 @@ This terraform module will deploy the following services:
 | Parameter            | Type    | Description                                                                                              | Default    | Required |
 |----------------------|---------|----------------------------------------------------------------------------------------------------------|------------|----------|
 | cluster_name     | string  | Name of EKS cluster   |            | Y        |
+| ng_name     | string  | Name used for launch template and autoscaling group created for EKS nodes   |            | Y        |
 | desired_size         | number  | Initial number of nodes to launch               | 2          | N        |
 | max_size             | number  | Maximum number of nodes                                                                                  | 4          | N        |
 | min_size             | number  | Minimum number of nodes to maintain at any given point of time                                           | 2          | N        |
@@ -34,6 +35,7 @@ This terraform module will deploy the following services:
 | Parameter           | Type   | Description               |
 |---------------------|--------|---------------------------|
 | profile           | string | Name of IAM instance profile created for EKS nodes            |
+| role_name | string | Name of IAM role created for EKS nodes       |
 | role_arn | string | ARN of IAM role created for EKS nodes       |
 | cluster_name           | string | Name of EKS cluster to which nodes are attached            |
 | sg_ids           | list | IDs of security group attached to EKS node            |

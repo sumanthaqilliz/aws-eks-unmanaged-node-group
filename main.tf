@@ -147,7 +147,7 @@ data "aws_kms_key" "eks_ng_key" {
 }
 
 data "template_file" "user_data" {
-  template = file("user-data.tpl")
+  template = file("${path.module}/user-data.tpl")
 
   vars = {
     CLUSTER_NAME         = var.cluster_name
@@ -157,7 +157,8 @@ data "template_file" "user_data" {
 }
 
 resource "aws_launch_template" "eks_ng_template" {
-  name_prefix = "${var.cluster_name}-ng-template-"
+  name_prefix = var.ng_name == "" ? "${var.cluster_name}-ng-template-" : null
+  name        = var.ng_name == "" ? null : "${var.ng_name}-template"
 
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -194,7 +195,8 @@ resource "aws_launch_template" "eks_ng_template" {
 }
 
 resource "aws_autoscaling_group" "eks_ng_asg" {
-  name_prefix      = "${var.cluster_name}-ng-asg-"
+  name_prefix      = var.ng_name == "" ? "${var.cluster_name}-ng-asg-" : null
+  name             = var.ng_name == "" ? null : "${var.ng_name}-asg"
   max_size         = var.max_size
   min_size         = var.min_size
   desired_capacity = var.desired_size
