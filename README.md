@@ -20,7 +20,7 @@ This terraform module will deploy the following services:
 | ami_id             | string  | Leave it blank to use latest eks optmised image maintained by AWS or provide your own image id            |  | N        |
 | volume_size            | number  | Size of each EBS volume attached to EKS node                                                             | 20         | N        |
 | encrypt_volume            | boolean  | Whether to apply rest side encryption on ebs volume                    | true         | N        |
-| volume_type | string | EBS volume type to used. Valid values: gp2 or io1                     | true      | N        |
+| volume_type | string | EBS volume type to used. Valid values: gp2 or io1                     | gp2      | N        |
 | iops | number | No. of iops for EBS volume. **Required if volume_type is set to io1**             | 0      | N        |
 | kms_key         | string  | ID/Alias/ARN of kms key to use for encrypting ebs volume     | alias/aws/ebs           | N        |
 | ssh_key_name        | string    | Name of key pair to used for remote access of nodes               |            | N        |
