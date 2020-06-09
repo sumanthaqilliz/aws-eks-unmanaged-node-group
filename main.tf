@@ -185,7 +185,7 @@ resource "aws_launch_template" "eks_ng_template" {
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name == "" ? null : var.ssh_key_name
-  vpc_security_group_ids = flatten([aws_security_group.eks_ng_sg.*.id, [var.ng_sg_id]])
+  vpc_security_group_ids = var.ng_sg_id == "" ? aws_security_group.eks_ng_sg.*.id : [var.ng_sg_id]
 
   metadata_options {
     http_endpoint               = "enabled"
