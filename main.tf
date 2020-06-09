@@ -125,7 +125,7 @@ resource "aws_security_group" "eks_ng_sg" {
 }
 
 resource "aws_security_group_rule" "eks_ng_ssh_rule" {
-  count                    = var.ssh_key_name == "" && var.ng_sg_id != "" ? 0 : 1
+  count                    = var.ng_sg_id == "" && var.ssh_key_name != "" ? 1 : 0
   type                     = "ingress"
   from_port                = 22
   to_port                  = 22
