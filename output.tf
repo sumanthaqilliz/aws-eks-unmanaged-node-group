@@ -11,7 +11,7 @@ output "role_arn" {
 }
 
 output "sg_id" {
-  value = aws_security_group.eks_ng_sg.id
+  value = join(", ", aws_security_group.eks_ng_sg.*.id)
 }
 
 output "asg_id" {

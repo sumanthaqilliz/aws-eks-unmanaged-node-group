@@ -24,12 +24,20 @@ This terraform module will deploy the following services:
 | volume_type | string | EBS volume type to used. Valid values: gp2 or io1                     | gp2      | N        |
 | iops | number | No. of iops for EBS volume. **Required if volume_type is set to io1**             | 0      | N        |
 | kms_key         | string  | ID/Alias/ARN of kms key to use for encrypting ebs volume     | alias/aws/ebs           | N        |
+| ng_sg_id        | string    | Security group id to attach to node group. Leave it blank to create new security group   |            | N        |
 | ssh_key_name        | string    | Name of key pair to used for remote access of nodes               |            | N        |
 | ssh_cidr_blocks     | list    | CIDR blocks to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**                   | ["0.0.0.0/0"]           | N        |
 | ssh_source_sg_id           | string    | Security group to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**       |            | N        |
 | bootstrap_args           | string    | Bootstrap arguments to supply to eks bootstrap script                           |            | N        |
 | user_data_base64           | string    | Additional user data in base64 format to execute when instance boots up                              |            | N        |
 | subnet_ids           | list    | List of subnet ids to be used for launching EKS nodes                                                    |            | Y        |
+| use_spot_instances           | boolean    | Use spot instance for EKS nodes                   | false           | N        |
+| spot_max_price           | number    | Maximum price you would like to pay for spot instances       |            | N        |
+| spot_interruption_behavior | string    | What should happen to instance when interrupted. Valid values: hibernate, stop or terminate          | terminate           | N        |
+| spot_type           | string    | The Spot Instance request type. Valid values: one-time, or persistent      |            | N        |
+| spot_block_duration_minutes | number    | No. of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60      |            | N        |
+| spot_expiry           | string    | The end date of the request       |            | N        |
+| tags           | map    | A map of key and value pair to assign to resources       |            | N        |
 
 ## Outputs
 | Parameter           | Type   | Description               |

@@ -44,6 +44,10 @@ variable "kms_key" {
   default = "alias/aws/ebs"
 }
 
+variable "ng_sg_id" {
+  default = ""
+}
+
 variable "ssh_key_name" {
   default = ""
 }
@@ -68,4 +72,34 @@ variable "user_data_base64" {
 
 variable "subnet_ids" {
   type = list
+}
+
+variable "use_spot_instances" {
+  default = false
+}
+
+variable "spot_max_price" {
+  default = ""
+}
+
+variable "spot_interruption_behavior" {
+  default = ""
+}
+
+variable "spot_type" {
+  default = ""
+}
+
+variable "spot_block_duration_minutes" {
+  default = ""
+}
+
+variable "spot_expiry" {
+  default = ""
+}
+
+variable "tags" {
+  type = map
+
+  default = {}
 }

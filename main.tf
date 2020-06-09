@@ -87,8 +87,10 @@ locals {
 }
 
 resource "aws_security_group" "eks_ng_sg" {
+  count       = var.ng_sg_id == "" ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-sg-"
   vpc_id      = local.vpc_id
+  description = "Security group for ${var.cluster_name} worker nodes"
 
   ingress {
     from_port   = 0
@@ -118,10 +120,12 @@ resource "aws_security_group" "eks_ng_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = var.tags
 }
 
 resource "aws_security_group_rule" "eks_ng_ssh_rule" {
-  count                    = var.ssh_key_name == "" ? 0 : 1
+  count                    = var.ssh_key_name == "" && var.ng_sg_id != "" ? 0 : 1
   type                     = "ingress"
   from_port                = 22
   to_port                  = 22
@@ -129,16 +133,17 @@ resource "aws_security_group_rule" "eks_ng_ssh_rule" {
   description              = "Allow SSH connection to node"
   source_security_group_id = var.ssh_source_sg_id == "" ? null : var.ssh_source_sg_id
   cidr_blocks              = var.ssh_source_sg_id == "" ? var.ssh_cidr_blocks : null
-  security_group_id        = aws_security_group.eks_ng_sg.id
+  security_group_id        = join(", ", aws_security_group.eks_ng_sg.*.id)
 }
 
 resource "aws_security_group_rule" "cluster_sg_rule" {
+  count                    = var.ng_sg_id == "" ? 1 : 0
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
   protocol                 = "tcp"
   description              = "Allow pods to communicate with the cluster API Server"
-  source_security_group_id = aws_security_group.eks_ng_sg.id
+  source_security_group_id = join(", ", aws_security_group.eks_ng_sg.*.id)
   security_group_id        = local.cluster_sg_id
 }
 
@@ -180,7 +185,7 @@ resource "aws_launch_template" "eks_ng_template" {
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name == "" ? null : var.ssh_key_name
-  vpc_security_group_ids = [aws_security_group.eks_ng_sg.id]
+  vpc_security_group_ids = flatten(aws_security_group.eks_ng_sg.*.id, [var.ng_sg_id])
 
   metadata_options {
     http_endpoint               = "enabled"
@@ -192,6 +197,20 @@ resource "aws_launch_template" "eks_ng_template" {
   lifecycle {
     create_before_destroy = true
   }
+
+  instance_market_options {
+    market_type = var.use_spot_instances ? "spot" : null
+
+    spot_options {
+      block_duration_minutes         = var.spot_block_duration_minutes == "" ? null : var.spot_block_duration_minutes
+      instance_interruption_behavior = var.spot_interruption_behavior == "" ? null : var.spot_interruption_behavior
+      max_price                      = var.spot_max_price == "" ? null : var.spot_max_price
+      spot_instance_type             = var.spot_type == "" ? null : var.spot_type
+      valid_until                    = var.spot_expiry == "" ? null : var.spot_expiry
+    }
+  }
+
+  tags = var.tags
 }
 
 resource "aws_autoscaling_group" "eks_ng_asg" {
@@ -210,7 +229,7 @@ resource "aws_autoscaling_group" "eks_ng_asg" {
 
   tag {
     key                 = "Name"
-    value               = "${var.cluster_name}-ng-node"
+    value               = "${aws_launch_template.eks_ng_template.name}-node"
     propagate_at_launch = true
   }
   tag {
@@ -227,6 +246,16 @@ resource "aws_autoscaling_group" "eks_ng_asg" {
     key                 = "k8s.io/cluster-autoscaler/enabled"
     value               = "true"
     propagate_at_launch = true
+  }
+
+  dynamic "tag" {
+    for_each = var.tags
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
   }
 
   lifecycle {
