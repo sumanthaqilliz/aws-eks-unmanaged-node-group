@@ -1,13 +1,13 @@
-output "profile" {
-  value = aws_iam_instance_profile.eks_ng_vm_profile.name
+output "iam_profile" {
+  value = local.node_iam_profile
 }
 
 output "role_name" {
-  value = aws_iam_role.eks_ng_role.name
+  value = local.node_role_name
 }
 
 output "role_arn" {
-  value = aws_iam_role.eks_ng_role.arn
+  value = local.node_role_arn
 }
 
 output "sg_id" {

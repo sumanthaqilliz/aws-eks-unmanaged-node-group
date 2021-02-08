@@ -48,12 +48,16 @@ variable "ng_sg_id" {
   default = ""
 }
 
+variable "node_iam_profile" {
+  default = ""
+}
+
 variable "ssh_key_name" {
   default = ""
 }
 
 variable "ssh_cidr_blocks" {
-  type = list
+  type = list(any)
 
   default = ["0.0.0.0/0"]
 }
@@ -71,7 +75,7 @@ variable "user_data_base64" {
 }
 
 variable "subnet_ids" {
-  type = list
+  type = list(any)
 }
 
 variable "use_spot_instances" {
@@ -99,7 +103,7 @@ variable "spot_expiry" {
 }
 
 variable "tags" {
-  type = map
+  type = map(any)
 
   default = {}
 }

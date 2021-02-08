@@ -18,12 +18,20 @@ data "aws_ami" "eks_ami" {
   owners = ["amazon"]
 }
 
+# Required if instance profile is provided by user
+data "aws_iam_instance_profile" "eks_ng_vm_profile" {
+  count = var.node_iam_profile == "" ? 0 : 1
+  name  = var.node_iam_profile
+}
+
 resource "aws_iam_instance_profile" "eks_ng_vm_profile" {
+  count       = var.node_iam_profile == "" ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-profile-"
-  role        = aws_iam_role.eks_ng_role.name
+  role        = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role" "eks_ng_role" {
+  count                 = var.node_iam_profile == "" ? 1 : 0
   name_prefix           = "${var.cluster_name}-ng-role-"
   force_detach_policies = true
 
@@ -40,24 +48,28 @@ resource "aws_iam_role" "eks_ng_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ng_worker_policy" {
+  count      = var.node_iam_profile == "" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.eks_ng_role.name
+  role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role_policy_attachment" "ng_cni_policy" {
+  count      = var.node_iam_profile == "" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.eks_ng_role.name
+  role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role_policy_attachment" "ng_registry_policy" {
+  count      = var.node_iam_profile == "" ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.eks_ng_role.name
+  role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 # Policy required for cluster autoscaling
 resource "aws_iam_role_policy" "eks_scaling_policy" {
+  count       = var.node_iam_profile == "" ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-role-policy-"
-  role        = aws_iam_role.eks_ng_role.id
+  role        = join(", ", aws_iam_role.eks_ng_role.*.id)
 
   policy = <<-EOF
   {
@@ -82,8 +94,11 @@ resource "aws_iam_role_policy" "eks_scaling_policy" {
 }
 
 locals {
-  vpc_id        = data.aws_eks_cluster.cluster.vpc_config.0.vpc_id
-  cluster_sg_id = data.aws_eks_cluster.cluster.vpc_config.0.cluster_security_group_id
+  vpc_id           = data.aws_eks_cluster.cluster.vpc_config.0.vpc_id
+  cluster_sg_id    = data.aws_eks_cluster.cluster.vpc_config.0.cluster_security_group_id
+  node_iam_profile = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : var.node_iam_profile
+  node_role_name   = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.name) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_name)
+  node_role_arn    = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.arn) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_arn)
 }
 
 resource "aws_security_group" "eks_ng_sg" {
@@ -162,6 +177,7 @@ data "template_file" "user_data" {
 }
 
 resource "aws_launch_template" "eks_ng_template" {
+  count       = var.use_spot_instances ? 0 : 1
   name_prefix = var.ng_name == "" ? "${var.cluster_name}-ng-template-" : null
   name        = var.ng_name == "" ? null : "${var.ng_name}-template"
 
@@ -179,7 +195,48 @@ resource "aws_launch_template" "eks_ng_template" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.eks_ng_vm_profile.name
+    name = local.node_iam_profile
+  }
+
+  image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
+  instance_type          = var.instance_type
+  key_name               = var.ssh_key_name == "" ? null : var.ssh_key_name
+  vpc_security_group_ids = var.ng_sg_id == "" ? aws_security_group.eks_ng_sg.*.id : [var.ng_sg_id]
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+  }
+
+  user_data = base64encode(data.template_file.user_data.rendered)
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = var.tags
+}
+
+resource "aws_launch_template" "eks_ng_spot_template" {
+  count       = var.use_spot_instances ? 1 : 0
+  name_prefix = var.ng_name == "" ? "${var.cluster_name}-ng-template-" : null
+  name        = var.ng_name == "" ? null : "${var.ng_name}-template"
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           = var.volume_size
+      delete_on_termination = true
+      encrypted             = var.encrypt_volume
+      kms_key_id            = var.encrypt_volume == true ? data.aws_kms_key.eks_ng_key.arn : null
+      volume_type           = var.volume_type
+      iops                  = var.volume_type == "io1" ? var.iops : null
+    }
+  }
+
+  iam_instance_profile {
+    name = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : null
   }
 
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
@@ -213,6 +270,11 @@ resource "aws_launch_template" "eks_ng_template" {
   tags = var.tags
 }
 
+locals {
+  ng_id   = var.use_spot_instances ? join(", ", aws_launch_template.eks_ng_spot_template.*.id) : join(", ", aws_launch_template.eks_ng_template.*.id)
+  ng_name = var.use_spot_instances ? join(", ", aws_launch_template.eks_ng_spot_template.*.name) : join(", ", aws_launch_template.eks_ng_template.*.name)
+}
+
 resource "aws_autoscaling_group" "eks_ng_asg" {
   name_prefix      = var.ng_name == "" ? "${var.cluster_name}-ng-asg-" : null
   name             = var.ng_name == "" ? null : "${var.ng_name}-asg"
@@ -221,7 +283,7 @@ resource "aws_autoscaling_group" "eks_ng_asg" {
   desired_capacity = var.desired_size
 
   launch_template {
-    id      = aws_launch_template.eks_ng_template.id
+    id      = local.ng_id
     version = "$Latest"
   }
 
@@ -229,7 +291,7 @@ resource "aws_autoscaling_group" "eks_ng_asg" {
 
   tag {
     key                 = "Name"
-    value               = "${aws_launch_template.eks_ng_template.name}-node"
+    value               = "${local.ng_name}-node"
     propagate_at_launch = true
   }
   tag {
@@ -260,5 +322,8 @@ resource "aws_autoscaling_group" "eks_ng_asg" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes = [
+      desired_capacity
+    ]
   }
 }
