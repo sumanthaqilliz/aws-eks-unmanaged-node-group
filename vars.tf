@@ -44,8 +44,9 @@ variable "kms_key" {
   default = "alias/aws/ebs"
 }
 
-variable "ng_sg_id" {
-  default = ""
+variable "ng_sg_ids" {
+  type    = list(any)
+  default = []
 }
 
 variable "node_iam_profile" {

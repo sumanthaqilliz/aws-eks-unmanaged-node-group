@@ -10,8 +10,8 @@ output "role_arn" {
   value = local.node_role_arn
 }
 
-output "sg_id" {
-  value = join(", ", aws_security_group.eks_ng_sg.*.id)
+output "sg_ids" {
+  value = local.node_sg_ids
 }
 
 output "asg_id" {

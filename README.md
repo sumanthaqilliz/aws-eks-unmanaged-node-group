@@ -30,6 +30,7 @@ MIT Licence. See [Licence](LICENCE) for full details.
 | iops | number | No. of iops for EBS volume. **Required if volume_type is set to io1**             | 0      | N        |
 | kms_key         | string  | ID/Alias/ARN of kms key to use for encrypting ebs volume     | alias/aws/ebs           | N        |
 | ng_sg_id        | string    | Security group id to attach to node group. Leave it blank to create new security group   |            | N        |
+| node_iam_profile | string    | IAM instance profile to associate with EC2. Leave it blank to create new instance profile with required permissions   |            | N        |
 | ssh_key_name        | string    | Name of key pair to used for remote access of nodes               |            | N        |
 | ssh_cidr_blocks     | list    | CIDR blocks to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**                   | ["0.0.0.0/0"]           | N        |
 | ssh_source_sg_id           | string    | Security group to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**       |            | N        |
@@ -47,9 +48,9 @@ MIT Licence. See [Licence](LICENCE) for full details.
 ## Outputs
 | Parameter           | Type   | Description               |
 |---------------------|--------|---------------------------|
-| profile           | string | Name of IAM instance profile created for EKS nodes            |
-| role_name | string | Name of IAM role created for EKS nodes       |
-| role_arn | string | ARN of IAM role created for EKS nodes       |
+| iam_profile         | string | Name of IAM instance profile associated with EKS nodes            |
+| role_name | string | Name of IAM role associated with EKS nodes       |
+| role_arn | string | ARN of IAM role associated with EKS nodes       |
 | cluster_name           | string | Name of EKS cluster to which nodes are attached            |
 | sg_ids           | list | IDs of security group attached to EKS node            |
 | asg_id           | string | ID of autoscaling group            |

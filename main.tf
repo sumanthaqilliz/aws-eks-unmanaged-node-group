@@ -93,16 +93,8 @@ resource "aws_iam_role_policy" "eks_scaling_policy" {
   EOF
 }
 
-locals {
-  vpc_id           = data.aws_eks_cluster.cluster.vpc_config.0.vpc_id
-  cluster_sg_id    = data.aws_eks_cluster.cluster.vpc_config.0.cluster_security_group_id
-  node_iam_profile = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : var.node_iam_profile
-  node_role_name   = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.name) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_name)
-  node_role_arn    = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.arn) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_arn)
-}
-
 resource "aws_security_group" "eks_ng_sg" {
-  count       = var.ng_sg_id == "" ? 1 : 0
+  count       = length(var.ng_sg_ids) == 0 ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-sg-"
   vpc_id      = local.vpc_id
   description = "Security group for ${var.cluster_name} worker nodes"
@@ -140,7 +132,7 @@ resource "aws_security_group" "eks_ng_sg" {
 }
 
 resource "aws_security_group_rule" "eks_ng_ssh_rule" {
-  count                    = var.ng_sg_id == "" && var.ssh_key_name != "" ? 1 : 0
+  count                    = length(var.ng_sg_ids) == 0 && var.ssh_key_name != "" ? 1 : 0
   type                     = "ingress"
   from_port                = 22
   to_port                  = 22
@@ -152,7 +144,7 @@ resource "aws_security_group_rule" "eks_ng_ssh_rule" {
 }
 
 resource "aws_security_group_rule" "cluster_sg_rule" {
-  count                    = var.ng_sg_id == "" ? 1 : 0
+  count                    = length(var.ng_sg_ids) == 0 ? 1 : 0
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
@@ -160,6 +152,15 @@ resource "aws_security_group_rule" "cluster_sg_rule" {
   description              = "Allow pods to communicate with the cluster API Server"
   source_security_group_id = join(", ", aws_security_group.eks_ng_sg.*.id)
   security_group_id        = local.cluster_sg_id
+}
+
+locals {
+  vpc_id           = data.aws_eks_cluster.cluster.vpc_config.0.vpc_id
+  cluster_sg_id    = data.aws_eks_cluster.cluster.vpc_config.0.cluster_security_group_id
+  node_iam_profile = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : var.node_iam_profile
+  node_role_name   = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.name) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_name)
+  node_role_arn    = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.arn) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_arn)
+  node_sg_ids      = length(var.ng_sg_ids) == 0 ? aws_security_group.eks_ng_sg.*.id : var.ng_sg_ids
 }
 
 data "aws_kms_key" "eks_ng_key" {
@@ -201,7 +202,7 @@ resource "aws_launch_template" "eks_ng_template" {
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name == "" ? null : var.ssh_key_name
-  vpc_security_group_ids = var.ng_sg_id == "" ? aws_security_group.eks_ng_sg.*.id : [var.ng_sg_id]
+  vpc_security_group_ids = local.node_sg_ids
 
   metadata_options {
     http_endpoint               = "enabled"
@@ -242,7 +243,7 @@ resource "aws_launch_template" "eks_ng_spot_template" {
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id
   instance_type          = var.instance_type
   key_name               = var.ssh_key_name == "" ? null : var.ssh_key_name
-  vpc_security_group_ids = var.ng_sg_id == "" ? aws_security_group.eks_ng_sg.*.id : [var.ng_sg_id]
+  vpc_security_group_ids = local.node_sg_ids
 
   metadata_options {
     http_endpoint               = "enabled"
