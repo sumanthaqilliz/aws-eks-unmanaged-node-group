@@ -20,18 +20,18 @@ data "aws_ami" "eks_ami" {
 
 # Required if instance profile is provided by user
 data "aws_iam_instance_profile" "eks_ng_vm_profile" {
-  count = var.node_iam_profile == "" ? 0 : 1
+  count = var.create_node_iam_profile ? 0 : 1
   name  = var.node_iam_profile
 }
 
 resource "aws_iam_instance_profile" "eks_ng_vm_profile" {
-  count       = var.node_iam_profile == "" ? 1 : 0
+  count       = var.create_node_iam_profile ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-profile-"
   role        = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role" "eks_ng_role" {
-  count                 = var.node_iam_profile == "" ? 1 : 0
+  count                 = var.create_node_iam_profile ? 1 : 0
   name_prefix           = "${var.cluster_name}-ng-role-"
   force_detach_policies = true
 
@@ -48,26 +48,26 @@ resource "aws_iam_role" "eks_ng_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ng_worker_policy" {
-  count      = var.node_iam_profile == "" ? 1 : 0
+  count      = var.create_node_iam_profile ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role_policy_attachment" "ng_cni_policy" {
-  count      = var.node_iam_profile == "" ? 1 : 0
+  count      = var.create_node_iam_profile ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 resource "aws_iam_role_policy_attachment" "ng_registry_policy" {
-  count      = var.node_iam_profile == "" ? 1 : 0
+  count      = var.create_node_iam_profile ? 1 : 0
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = join(", ", aws_iam_role.eks_ng_role.*.name)
 }
 
 # Policy required for cluster autoscaling
 resource "aws_iam_role_policy" "eks_scaling_policy" {
-  count       = var.node_iam_profile == "" ? 1 : 0
+  count       = var.create_node_iam_profile ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-role-policy-"
   role        = join(", ", aws_iam_role.eks_ng_role.*.id)
 
@@ -157,9 +157,9 @@ resource "aws_security_group_rule" "cluster_sg_rule" {
 locals {
   vpc_id           = data.aws_eks_cluster.cluster.vpc_config.0.vpc_id
   cluster_sg_id    = data.aws_eks_cluster.cluster.vpc_config.0.cluster_security_group_id
-  node_iam_profile = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : var.node_iam_profile
-  node_role_name   = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.name) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_name)
-  node_role_arn    = var.node_iam_profile == "" ? join(", ", aws_iam_role.eks_ng_role.*.arn) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_arn)
+  node_iam_profile = var.create_node_iam_profile ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : var.node_iam_profile
+  node_role_name   = var.create_node_iam_profile ? join(", ", aws_iam_role.eks_ng_role.*.name) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_name)
+  node_role_arn    = var.create_node_iam_profile ? join(", ", aws_iam_role.eks_ng_role.*.arn) : join(", ", data.aws_iam_instance_profile.eks_ng_vm_profile.*.role_arn)
   node_sg_ids      = length(var.ng_sg_ids) == 0 ? aws_security_group.eks_ng_sg.*.id : var.ng_sg_ids
 }
 
@@ -237,7 +237,7 @@ resource "aws_launch_template" "eks_ng_spot_template" {
   }
 
   iam_instance_profile {
-    name = var.node_iam_profile == "" ? join(", ", aws_iam_instance_profile.eks_ng_vm_profile.*.name) : null
+    name = local.node_iam_profile
   }
 
   image_id               = var.ami_id == "" ? data.aws_ami.eks_ami.image_id : var.ami_id

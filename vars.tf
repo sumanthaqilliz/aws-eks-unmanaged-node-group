@@ -49,6 +49,10 @@ variable "ng_sg_ids" {
   default = []
 }
 
+variable "create_node_iam_profile" {
+  default = true
+}
+
 variable "node_iam_profile" {
   default = ""
 }
