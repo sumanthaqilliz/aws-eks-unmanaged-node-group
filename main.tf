@@ -261,7 +261,7 @@ resource "aws_launch_template" "eks_ng_spot_template" {
 
     spot_options {
       block_duration_minutes         = var.spot_block_duration_minutes == "" ? null : var.spot_block_duration_minutes
-      instance_interruption_behavior = var.spot_interruption_behavior == "" ? null : var.spot_interruption_behavior
+      instance_interruption_behavior = var.spot_interruption_behavior == "" ? "terminate" : var.spot_interruption_behavior
       max_price                      = var.spot_max_price == "" ? null : var.spot_max_price
       spot_instance_type             = var.spot_type == "" ? null : var.spot_type
       valid_until                    = var.spot_expiry == "" ? null : var.spot_expiry
