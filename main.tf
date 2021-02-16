@@ -129,6 +129,12 @@ resource "aws_security_group" "eks_ng_sg" {
   }
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [ 
+      ingress
+    ]
+  }
 }
 
 resource "aws_security_group_rule" "eks_ng_ssh_rule" {
