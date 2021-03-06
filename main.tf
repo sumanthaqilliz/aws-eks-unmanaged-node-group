@@ -131,7 +131,7 @@ resource "aws_security_group" "eks_ng_sg" {
   tags = var.tags
 
   lifecycle {
-    ignore_changes = [ 
+    ignore_changes = [
       ingress
     ]
   }
