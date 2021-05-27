@@ -94,50 +94,59 @@ resource "aws_iam_role_policy" "eks_scaling_policy" {
 }
 
 resource "aws_security_group" "eks_ng_sg" {
+  # checkov:skip=CKV2_AWS_5: Security group gets associated with EKS nodes
   count       = length(var.ng_sg_ids) == 0 ? 1 : 0
   name_prefix = "${var.cluster_name}-ng-sg-"
   vpc_id      = local.vpc_id
   description = "Security group for ${var.cluster_name} worker nodes"
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = true
-    description = "Allow node to communicate with each other"
-  }
-  ingress {
-    from_port       = 1025
-    to_port         = 65535
-    protocol        = "tcp"
-    security_groups = [local.cluster_sg_id]
-    description     = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
-  }
-  ingress {
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [local.cluster_sg_id]
-    description     = "Allow pods running extension API servers on port 443 to receive communication from cluster control plane"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = [
-      ingress
-    ]
-  }
+  tags        = var.tags
 }
 
-resource "aws_security_group_rule" "eks_ng_ssh_rule" {
+resource "aws_security_group_rule" "node_to_node" {
+  count                    = length(var.ng_sg_ids) == 0 ? 1 : 0
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "-1"
+  description              = "Allow node to communicate with each other"
+  source_security_group_id = join(",", aws_security_group.eks_ng_sg.*.id)
+  security_group_id        = join(", ", aws_security_group.eks_ng_sg.*.id)
+}
+
+resource "aws_security_group_rule" "pods_to_control_plane" {
+  count                    = length(var.ng_sg_ids) == 0 ? 1 : 0
+  type                     = "ingress"
+  from_port                = 1025
+  to_port                  = 65535
+  protocol                 = "tcp"
+  description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
+  source_security_group_id = local.cluster_sg_id
+  security_group_id        = join(", ", aws_security_group.eks_ng_sg.*.id)
+}
+
+resource "aws_security_group_rule" "control_plane_to_pods" {
+  count                    = length(var.ng_sg_ids) == 0 ? 1 : 0
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  description              = "Allow pods running extension API servers on port 443 to receive communication from cluster control plane"
+  source_security_group_id = local.cluster_sg_id
+  security_group_id        = join(", ", aws_security_group.eks_ng_sg.*.id)
+}
+
+resource "aws_security_group_rule" "eks_ng_egress" {
+  count             = length(var.ng_sg_ids) == 0 && var.ssh_key_name != "" ? 1 : 0
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = join(", ", aws_security_group.eks_ng_sg.*.id)
+}
+
+resource "aws_security_group_rule" "eks_ng_ssh" {
+  # checkov:skip=CKV_AWS_24: Restricting SSH access to world for EKS nodes depends on user
   count                    = length(var.ng_sg_ids) == 0 && var.ssh_key_name != "" ? 1 : 0
   type                     = "ingress"
   from_port                = 22
@@ -149,7 +158,7 @@ resource "aws_security_group_rule" "eks_ng_ssh_rule" {
   security_group_id        = join(", ", aws_security_group.eks_ng_sg.*.id)
 }
 
-resource "aws_security_group_rule" "cluster_sg_rule" {
+resource "aws_security_group_rule" "cluster_sg" {
   count                    = length(var.ng_sg_ids) == 0 ? 1 : 0
   type                     = "ingress"
   from_port                = 443
@@ -213,6 +222,7 @@ resource "aws_launch_template" "eks_ng_template" {
   metadata_options {
     http_endpoint               = "enabled"
     http_put_response_hop_limit = 2
+    http_tokens                 = "required"
   }
 
   user_data = base64encode(data.template_file.user_data.rendered)

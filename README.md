@@ -1,5 +1,7 @@
 # Launch an EKS Self-Managed Node Group
 
+![License](https://img.shields.io/github/license/terrablocks/aws-eks-unmanaged-node-group?style=for-the-badge) ![Tests](https://img.shields.io/github/workflow/status/terrablocks/aws-eks-unmanaged-node-group/tests/master?label=Test&style=for-the-badge) ![Checkov](https://img.shields.io/github/workflow/status/terrablocks/aws-eks-unmanaged-node-group/checkov/master?label=Checkov&style=for-the-badge) ![Commit](https://img.shields.io/github/last-commit/terrablocks/aws-eks-unmanaged-node-group?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/terrablocks/aws-eks-unmanaged-node-group?style=for-the-badge)
+
 This terraform module will deploy the following services:
 - IAM Instance Profile
 - IAM Role
@@ -8,68 +10,67 @@ This terraform module will deploy the following services:
 - Launch Template
 - Auto Scaling Group
 
-## Licence:
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-
-MIT Licence. See [Licence](LICENCE) for full details.
-
-# Usage Instructions:
+# Usage Instructions
 ## Example
 ```terraform
 module "eks_worker" {
   source = "github.com/terrablocks/aws-eks-unmanaged-node-group.git"
 
   cluster_name = "eks-cluster"
-  subnet_ids   = []
+  subnet_ids   = ["subnet-xxxx", "subnet-yyyy"]
 }
 ```
-## Variables
-| Parameter            | Type    | Description                                                                                              | Default    | Required |
-|----------------------|---------|----------------------------------------------------------------------------------------------------------|------------|----------|
-| cluster_name     | string  | Name of EKS cluster   |            | Y        |
-| ng_name     | string  | Name used for launch template and autoscaling group created for EKS nodes   |            | N        |
-| desired_size         | number  | Initial number of nodes to launch               | 2          | N        |
-| max_size             | number  | Maximum number of nodes                                                                                  | 4          | N        |
-| min_size             | number  | Minimum number of nodes to maintain at any given point of time                                           | 2          | N        |
-| instance_type        | string  | Type of instance to be used for EKS nodes                                                                | t3.medium  | N        |
-| ami_id             | string  | Leave it blank to use latest eks optmised image maintained by AWS or provide your own image id            |  | N        |
-| volume_size            | number  | Size of each EBS volume attached to EKS node                                                             | 20         | N        |
-| encrypt_volume            | boolean  | Whether to apply rest side encryption on ebs volume                    | true         | N        |
-| volume_type | string | EBS volume type to used. Valid values: gp2 or io1                     | gp2      | N        |
-| iops | number | No. of iops for EBS volume. **Required if volume_type is set to io1**             | 0      | N        |
-| kms_key         | string  | ID/Alias/ARN of kms key to use for encrypting ebs volume     | alias/aws/ebs           | N        |
-| ng_sg_id        | string    | Security group id to attach to node group. Leave it blank to create new security group   |            | N        |
-| create_node_iam_profile     | boolean  | Whether to create new IAM instance profile for EKS nodes      | true        | N        |
-| node_iam_profile | string    | IAM instance profile to associate with EC2. Leave it blank to create new instance profile with required permissions   |            | N        |
-| ssh_key_name        | string    | Name of key pair to used for remote access of nodes               |            | N        |
-| ssh_cidr_blocks     | list    | CIDR blocks to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**                   | ["0.0.0.0/0"]           | N        |
-| ssh_source_sg_id           | string    | Security group to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required**       |            | N        |
-| bootstrap_args           | string    | Bootstrap arguments to supply to eks bootstrap script                           |            | N        |
-| user_data_base64           | string    | Additional user data in base64 format to execute when instance boots up                              |            | N        |
-| subnet_ids           | list    | List of subnet ids to be used for launching EKS nodes                                                    |            | Y        |
-| use_spot_instances           | boolean    | Use spot instance for EKS nodes                   | false           | N        |
-| spot_max_price           | number    | Maximum price you would like to pay for spot instances       |            | N        |
-| spot_interruption_behavior | string    | What should happen to instance when interrupted. Valid values: hibernate, stop or terminate          | terminate           | N        |
-| spot_type           | string    | The Spot Instance request type. Valid values: one-time, or persistent      |            | N        |
-| spot_block_duration_minutes | number    | No. of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60      |            | N        |
-| spot_expiry           | string    | The end date of the request       |            | N        |
-| tags           | map    | A map of key and value pair to assign to resources       |            | N        |
+
+## Requirements
+
+| Name | Version |
+|------|---------|
+| terraform | >= 0.13 |
+| aws | >= 3.37.0 |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| cluster_name | Name of EKS cluster | `string` | n/a | yes |
+| ng_name | Name used for launch template and autoscaling group created for EKS nodes | `string` | `""` | no |
+| desired_size | Initial number of nodes to launch | `number` | `2` | no |
+| max_size | Maximum number of nodes | `number` | `4` | no |
+| min_size | Minimum number of nodes to maintain at any given point of time | `number` | `2` | no |
+| instance_type | Type of instance to be used for EKS nodes | `string` | `"t3.medium"` | no |
+| ami_id | Leave it blank to use latest eks optmised image maintained by AWS or provide your own image id | `string` | `""` | no |
+| volume_size | Size of each EBS volume attached to EKS node | `number` | `30` | no |
+| encrypt_volume | Whether to apply rest side encryption on ebs volume | `bool` | `true` | no |
+| volume_type | EBS volume type to used. Valid values: gp2, gp3, io1 or io2 | `string` | `"gp2"` | no |
+| iops | Number of iops for EBS volume. **Required if `volume_type` is set to io1** | `number` | `0` | no |
+| kms_key | ID/Alias/ARN of kms key to use for encrypting ebs volume | `string` | `"alias/aws/ebs"` | no |
+| ng_sg_ids | Security group id to attach to node group. Leave it blank to create new security group | `list(string)` | `[]` | no |
+| create_node_iam_profile | Whether to create new IAM instance profile for EKS nodes | `bool` | `true` | no |
+| node_iam_profile | IAM instance profile to associate with EC2. Leave it blank to create new instance profile with required permissions | `string` | `""` | no |
+| ssh_key_name | Name of key pair to used for remote access of nodes | `string` | `""` | no |
+| ssh_cidr_blocks | CIDR blocks to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required** | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
+| ssh_source_sg_id | Security group to whitelist for remote access of nodes. **Either of ssh_cidr_blocks or ssh_source_sg_id is required** | `string` | `""` | no |
+| bootstrap_args | Bootstrap arguments to supply to eks bootstrap script | `string` | `""` | no |
+| user_data_base64 | Additional user data in base64 format to execute when instance boots up | `string` | `""` | no |
+| subnet_ids | List of subnet ids to be used for launching EKS nodes | `list(string)` | n/a | yes |
+| use_spot_instances | Use spot instance for EKS nodes | `bool` | `false` | no |
+| spot_max_price | Maximum price you would like to pay for spot instances | `number` | `""` | no |
+| spot_interruption_behavior | What should happen to instance when interrupted. Valid values: hibernate, stop or terminate | `string` | `""` | no |
+| spot_type | The Spot Instance request type. Valid values: one-time, or persistent | `string` | `""` | no |
+| spot_block_duration_minutes | Number of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60 | `number` | `""` | no |
+| spot_expiry | The end date of the request | `string` | `""` | no |
+| tags | A map of key and value pair to assign to resources | `map(string)` | `{}` | no |
 
 ## Outputs
-| Parameter           | Type   | Description               |
-|---------------------|--------|---------------------------|
-| iam_profile         | string | Name of IAM instance profile associated with EKS nodes            |
-| role_name | string | Name of IAM role associated with EKS nodes       |
-| role_arn | string | ARN of IAM role associated with EKS nodes       |
-| cluster_name           | string | Name of EKS cluster to which nodes are attached            |
-| sg_ids           | list | IDs of security group attached to EKS node            |
-| asg_id           | string | ID of autoscaling group            |
 
-## Deployment
-- `terraform init` - download plugins required to deploy resources
-- `terraform plan` - get detailed view of resources that will be created, deleted or replaced
-- `terraform apply -auto-approve` - deploy the template without confirmation (non-interactive mode)
-- `terraform destroy -auto-approve` - terminate all the resources created using this template without confirmation (non-interactive mode)
+| Name | Description |
+|------|-------------|
+| iam_profile | Name of IAM instance profile associated with EKS nodes |
+| role_name | Name of IAM role associated with EKS nodes |
+| role_arn | ARN of IAM role associated with EKS nodes |
+| cluster_name | Name of EKS cluster to which nodes are attached |
+| sg_ids | IDs of security group attached to EKS node |
+| asg_id | ID of autoscaling group |
 
 ## [IMPORTANT] Post Steps (Source: [AWS](https://docs.aws.amazon.com/eks/latest/userguide/launch-workers.html#self-managed-nodes))
 Once the self managed nodes are created you need to execute the following steps so that your nodes can join EKS cluster.
@@ -79,7 +80,7 @@ Once the self managed nodes are created you need to execute the following steps 
 curl -o aws-auth-cm.yaml https://amazon-eks.s3.us-west-2.amazonaws.com/cloudformation/2020-05-08/aws-auth-cm.yaml
 ```
 
-#### Open the file with your favorite text editor. Replace the <ARN of instance role (not instance profile)> snippet with the `role_arn` value from terraform output:
+#### Open the file with your favorite text editor. Replace the <ARN of instance role (**NOT instance profile**)> snippet with the `role_arn` value from terraform output:
 **Note:** Do not modify any other lines in this file.
 ```
 apiVersion: v1
