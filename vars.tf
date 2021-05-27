@@ -130,7 +130,7 @@ variable "use_spot_instances" {
 
 variable "spot_max_price" {
   type        = number
-  default     = ""
+  default     = 0
   description = "Maximum price you would like to pay for spot instances"
 }
 
@@ -148,7 +148,7 @@ variable "spot_type" {
 
 variable "spot_block_duration_minutes" {
   type        = number
-  default     = ""
+  default     = 0
   description = "Number of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60"
 }
 

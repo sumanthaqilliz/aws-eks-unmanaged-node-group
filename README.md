@@ -54,10 +54,10 @@ module "eks_worker" {
 | user_data_base64 | Additional user data in base64 format to execute when instance boots up | `string` | `""` | no |
 | subnet_ids | List of subnet ids to be used for launching EKS nodes | `list(string)` | n/a | yes |
 | use_spot_instances | Use spot instance for EKS nodes | `bool` | `false` | no |
-| spot_max_price | Maximum price you would like to pay for spot instances | `number` | `""` | no |
+| spot_max_price | Maximum price you would like to pay for spot instances | `number` | `0` | no |
 | spot_interruption_behavior | What should happen to instance when interrupted. Valid values: hibernate, stop or terminate | `string` | `""` | no |
 | spot_type | The Spot Instance request type. Valid values: one-time, or persistent | `string` | `""` | no |
-| spot_block_duration_minutes | Number of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60 | `number` | `""` | no |
+| spot_block_duration_minutes | Number of minutes to wait before interrupting a Spot Instance after it is launched. Must be between 60 & 360 and multiple of 60 | `number` | `0` | no |
 | spot_expiry | The end date of the request | `string` | `""` | no |
 | tags | A map of key and value pair to assign to resources | `map(string)` | `{}` | no |
 
