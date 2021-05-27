@@ -264,6 +264,7 @@ resource "aws_launch_template" "eks_ng_spot_template" {
   metadata_options {
     http_endpoint               = "enabled"
     http_put_response_hop_limit = 2
+    http_tokens                 = "required"
   }
 
   user_data = base64encode(data.template_file.user_data.rendered)
