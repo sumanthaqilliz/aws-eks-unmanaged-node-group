@@ -136,7 +136,7 @@ resource "aws_security_group_rule" "control_plane_to_pods" {
 }
 
 resource "aws_security_group_rule" "eks_ng_egress" {
-  count             = length(var.ng_sg_ids) == 0 && var.ssh_key_name != "" ? 1 : 0
+  count             = length(var.ng_sg_ids) == 0 ? 1 : 0
   type              = "egress"
   from_port         = 0
   to_port           = 0
