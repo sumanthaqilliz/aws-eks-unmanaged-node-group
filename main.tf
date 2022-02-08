@@ -143,6 +143,7 @@ resource "aws_security_group_rule" "eks_ng_egress" {
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = join(", ", aws_security_group.eks_ng_sg.*.id)
+  description       = "Allow all outgoing connections"
 }
 
 resource "aws_security_group_rule" "eks_ng_ssh" {
