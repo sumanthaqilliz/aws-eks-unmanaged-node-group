@@ -151,7 +151,7 @@ spec:
 - You can replace `us` with `asia` or `eu` as per proximity
 
 ```
-kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=us.gcr.io/k8s-artifacts-prod/autoscaling/cluster-autoscaler:v1.16.x
+kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=k8s.gcr.io/autoscaling/cluster-autoscaler:v1.x.x
 ```
 
 #### Verify Cluster Autoscaler deployment by checking logs:
