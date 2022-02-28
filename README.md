@@ -148,7 +148,6 @@ spec:
 #### Set image for `cluster-autoscaler` deployment:
 
 - Visit Cluster Autoscaler [releases](https://github.com/kubernetes/autoscaler/releases) to get the latest semantic version number for your kubernetes version. Eg: If your k8s version is 1.16, look for the latest release of cluster-autoscaler beginning with your k8s version and note down the semantic version (1.16.`x`)
-- You can replace `us` with `asia` or `eu` as per proximity
 
 ```
 kubectl -n kube-system set image deployment.apps/cluster-autoscaler cluster-autoscaler=k8s.gcr.io/autoscaling/cluster-autoscaler:v1.x.x
